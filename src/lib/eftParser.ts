@@ -1,6 +1,4 @@
 import axios from 'axios';
-import { ESIService } from './esi';
-import { Skill } from '../types';
 
 const ESI_BASE = 'https://esi.evetech.net/latest';
 
