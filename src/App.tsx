@@ -6,7 +6,6 @@ import { AttributesPanel } from './components/AttributesPanel'
 import { PlanManager } from './components/PlanManager'
 import { useSkillStore } from './store/useSkillStore'
 import { ESIService } from './lib/esi'
-import { cn } from './lib/utils'
 
 function App() {
   const { setAllSkills } = useSkillStore();

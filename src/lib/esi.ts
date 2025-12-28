@@ -20,7 +20,7 @@ const PRIMARY_ATTR_ID = 180;
 const SECONDARY_ATTR_ID = 181;
 
 export const ESIService = {
-  async fetchAllSkills(onProgress?: (count: number, total: number) => void): Promise<Skill[]> {
+  async fetchAllSkills(): Promise<Skill[]> {
     // 1. Check LocalStorage Cache
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {

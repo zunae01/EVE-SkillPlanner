@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useSkillStore, SavedPlan } from '../store/useSkillStore';
-import { Save, FolderOpen, Trash2, Download, Upload, RefreshCw, Plus, X, Check, Settings } from 'lucide-react';
+import { FolderOpen, Trash2, Download, Upload, RefreshCw, Plus, X, Check } from 'lucide-react';
 import { ESIService } from '../lib/esi';
 import { cn } from '../lib/utils';
 
@@ -25,7 +25,7 @@ export function PlanManager() {
     setIsUpdating(true);
     setUpdateStatus('updating');
     try {
-      const skills = await ESIService.refreshDatabase((count, total) => {
+      const skills = await ESIService.refreshDatabase((_count, _total) => {
          // Could show progress here if we added a progress bar
       });
       setAllSkills(skills);

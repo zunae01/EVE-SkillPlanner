@@ -1,5 +1,3 @@
-import { CharacterAttributes } from '../types';
-
 export const SP_MULTIPLIER = 250;
 
 export function calculateSkillPoints(rank: number, level: number): number {
