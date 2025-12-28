@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, LogIn, LogOut } from 'lucide-react'
+import { LayoutDashboard, LogIn, LogOut, Sliders } from 'lucide-react'
 import { SkillBrowser } from './components/SkillBrowser'
 import { SkillQueue } from './components/SkillQueue'
-import { AttributesPanel } from './components/AttributesPanel'
+import { AttributesModal } from './components/AttributesModal'
 import { PlanManager } from './components/PlanManager'
 import { AuthCallback } from './components/AuthCallback'
 import { useSkillStore } from './store/useSkillStore'
@@ -12,6 +12,7 @@ import { AuthService } from './lib/auth'
 function App() {
   const { setAllSkills, user, logout } = useSkillStore();
   const [isCallback] = useState(window.location.pathname === '/callback');
+  const [isAttrModalOpen, setIsAttrModalOpen] = useState(false);
 
   useEffect(() => {
     if (!isCallback) {
@@ -46,8 +47,17 @@ function App() {
           </div>
           
           {/* Plan Manager Toolbar */}
-          <div className="flex-1 max-w-2xl w-full">
-            <PlanManager />
+          <div className="flex-1 max-w-2xl w-full flex items-center gap-2">
+            <div className="flex-1 min-w-0">
+                <PlanManager />
+            </div>
+            <button
+                onClick={() => setIsAttrModalOpen(true)}
+                className="h-12 w-12 flex items-center justify-center bg-card/50 backdrop-blur-md border border-white/5 rounded-lg text-muted-foreground hover:text-primary hover:bg-white/5 transition-colors"
+                title="Character Attributes"
+            >
+                <Sliders className="w-5 h-5" />
+            </button>
           </div>
 
           <div className="hidden md:flex items-center gap-4">
@@ -82,10 +92,7 @@ function App() {
           </div>
         </header>
         
-        {/* Top Stats / Attributes */}
-        <section>
-          <AttributesPanel />
-        </section>
+        <AttributesModal isOpen={isAttrModalOpen} onClose={() => setIsAttrModalOpen(false)} />
 
         {/* Main Grid */}
         <main className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">

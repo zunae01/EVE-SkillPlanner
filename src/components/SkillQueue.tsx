@@ -1,13 +1,14 @@
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { useSkillStore } from '../store/useSkillStore';
 import { calculateSkillPoints, calculateTrainingTime, formatTime } from '../lib/eveUtils';
-import { Trash2, GripVertical, Clock, Zap, CheckCircle2 } from 'lucide-react';
+import { Trash2, GripVertical, Clock, Zap, CheckCircle2, ClipboardCopy, Check } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { SkillLevelSquares } from './ui/SkillLevelSquares';
 
 export function SkillQueue() {
   const { queue, reorderQueue, removeFromQueue, attributes, trainedSkills } = useSkillStore();
+  const [copied, setCopied] = useState(false);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -17,6 +18,22 @@ export function SkillQueue() {
     items.splice(result.destination.index, 0, reorderedItem);
 
     reorderQueue(items);
+  };
+
+  const handleExportClipboard = () => {
+    if (queue.length === 0) return;
+
+    // Format: Skill Name Level (Roman Numeral)
+    // E.g. "Minmatar Industrial IV"
+    const roman = ['0', 'I', 'II', 'III', 'IV', 'V'];
+    const text = queue
+      .map(item => `${item.skill.name} ${roman[item.level]}`)
+      .join('\n');
+
+    navigator.clipboard.writeText(text).then(() => {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const queueWithStats = useMemo(() => {
@@ -58,8 +75,24 @@ export function SkillQueue() {
         <h2 className="font-semibold flex items-center gap-2">
           <Zap className="w-4 h-4 text-yellow-400" /> Skill Queue
         </h2>
-        <div className="text-xs font-mono text-muted-foreground bg-black/40 px-2 py-1 rounded">
-          Total: <span className="text-primary">{formatTime(totalTime)}</span>
+        <div className="flex items-center gap-2">
+            <button
+                onClick={handleExportClipboard}
+                disabled={queue.length === 0}
+                className={cn(
+                    "flex items-center gap-1.5 px-2 py-1 rounded text-[10px] uppercase font-bold tracking-wider transition-colors",
+                    copied 
+                        ? "bg-green-500/20 text-green-400 border border-green-500/30" 
+                        : "bg-white/5 hover:bg-white/10 text-muted-foreground border border-white/10 hover:text-foreground disabled:opacity-50"
+                )}
+                title="Copy to Clipboard for EVE Client Import"
+            >
+                {copied ? <Check className="w-3 h-3" /> : <ClipboardCopy className="w-3 h-3" />}
+                {copied ? "Copied!" : "Export to EVE"}
+            </button>
+            <div className="text-xs font-mono text-muted-foreground bg-black/40 px-2 py-1 rounded">
+            Total: <span className="text-primary">{formatTime(totalTime)}</span>
+            </div>
         </div>
       </div>
 
