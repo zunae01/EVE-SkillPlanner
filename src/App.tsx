@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { LayoutDashboard, LogIn, LogOut, User } from 'lucide-react'
+import { LayoutDashboard, LogIn, LogOut } from 'lucide-react'
 import { SkillBrowser } from './components/SkillBrowser'
 import { SkillQueue } from './components/SkillQueue'
 import { AttributesPanel } from './components/AttributesPanel'
@@ -8,11 +8,10 @@ import { AuthCallback } from './components/AuthCallback'
 import { useSkillStore } from './store/useSkillStore'
 import { ESIService } from './lib/esi'
 import { AuthService } from './lib/auth'
-import { cn } from './lib/utils'
 
 function App() {
   const { setAllSkills, user, logout } = useSkillStore();
-  const [isCallback, setIsCallback] = useState(window.location.pathname === '/callback');
+  const [isCallback] = useState(window.location.pathname === '/callback');
 
   useEffect(() => {
     if (!isCallback) {

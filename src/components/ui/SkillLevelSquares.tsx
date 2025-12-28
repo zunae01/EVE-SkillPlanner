@@ -10,7 +10,7 @@ interface SkillLevelSquaresProps {
 }
 
 export function SkillLevelSquares({ 
-  level = 0, 
+  level: _level = 0, 
   targetLevel = 0, 
   trainedLevel = 0,
   interactive = false, 
