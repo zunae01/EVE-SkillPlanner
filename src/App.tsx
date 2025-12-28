@@ -1,21 +1,31 @@
-import { useEffect } from 'react'
-import { LayoutDashboard } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { LayoutDashboard, LogIn, LogOut, User } from 'lucide-react'
 import { SkillBrowser } from './components/SkillBrowser'
 import { SkillQueue } from './components/SkillQueue'
 import { AttributesPanel } from './components/AttributesPanel'
 import { PlanManager } from './components/PlanManager'
+import { AuthCallback } from './components/AuthCallback'
 import { useSkillStore } from './store/useSkillStore'
 import { ESIService } from './lib/esi'
+import { AuthService } from './lib/auth'
+import { cn } from './lib/utils'
 
 function App() {
-  const { setAllSkills } = useSkillStore();
+  const { setAllSkills, user, logout } = useSkillStore();
+  const [isCallback, setIsCallback] = useState(window.location.pathname === '/callback');
 
   useEffect(() => {
-    // Initialize DB
-    ESIService.fetchAllSkills().then(skills => {
-      setAllSkills(skills);
-    });
-  }, [setAllSkills]);
+    if (!isCallback) {
+      // Initialize DB only on main app
+      ESIService.fetchAllSkills().then(skills => {
+        setAllSkills(skills);
+      });
+    }
+  }, [setAllSkills, isCallback]);
+
+  if (isCallback) {
+    return <AuthCallback />;
+  }
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-[#0a0f1e] to-black text-foreground p-4 md:p-8 font-sans selection:bg-primary/20 flex flex-col">
@@ -42,7 +52,34 @@ function App() {
           </div>
 
           <div className="hidden md:flex items-center gap-4">
-             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-primary to-purple-500 opacity-80" />
+             {user ? (
+               <div className="flex items-center gap-3 bg-white/5 rounded-full pl-1 pr-3 py-1 border border-white/10">
+                 <img 
+                   src={`https://images.evetech.net/characters/${user.characterId}/portrait?size=64`} 
+                   alt={user.characterName}
+                   className="w-8 h-8 rounded-full border border-white/20"
+                 />
+                 <div className="text-sm">
+                   <div className="font-medium leading-none">{user.characterName}</div>
+                   <div className="text-[10px] text-green-400">Omega (Simulated)</div>
+                 </div>
+                 <button 
+                   onClick={logout}
+                   className="ml-2 p-1.5 hover:bg-white/10 rounded-full text-muted-foreground hover:text-destructive transition-colors"
+                   title="Logout"
+                 >
+                   <LogOut className="w-4 h-4" />
+                 </button>
+               </div>
+             ) : (
+               <button 
+                 onClick={() => AuthService.initiateLogin()}
+                 className="flex items-center gap-2 px-4 py-2 bg-[#F7D453] text-black font-bold rounded hover:bg-[#F7D453]/90 transition-colors text-sm"
+               >
+                 <LogIn className="w-4 h-4" />
+                 Log in with EVE
+               </button>
+             )}
           </div>
         </header>
         

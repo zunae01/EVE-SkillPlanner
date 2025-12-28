@@ -37,6 +37,21 @@ export const ESIService = {
     return staticSkills as unknown as Skill[];
   },
 
+  async fetchCharacterSkills(characterId: number, accessToken: string): Promise<Record<number, number>> {
+    const res = await axios.get(
+      `${ESI_BASE}/characters/${characterId}/skills/`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    
+    // Convert to Map: { skill_id: trained_skill_level }
+    const trainedMap: Record<number, number> = {};
+    res.data.skills.forEach((s: any) => {
+      trainedMap[s.skill_id] = s.trained_skill_level;
+    });
+    
+    return trainedMap;
+  },
+
   async refreshDatabase(onProgress?: (count: number, total: number) => void): Promise<Skill[]> {
       try {
       // 1. Fetch Category 16 (Skills)

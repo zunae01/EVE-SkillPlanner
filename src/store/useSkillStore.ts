@@ -9,7 +9,19 @@ export interface SavedPlan {
   queue: QueueItem[];
 }
 
+export interface UserSession {
+  characterId: number;
+  characterName: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
 interface SkillStore {
+  // Auth State
+  user: UserSession | null;
+  trainedSkills: Record<number, number>; // skill_id -> level (0-5)
+
   // Active State
   queue: QueueItem[];
   attributes: CharacterAttributes;
@@ -27,6 +39,11 @@ interface SkillStore {
   setAttributes: (attrs: CharacterAttributes) => void;
   clearQueue: () => void;
   
+  // Auth Actions
+  login: (session: UserSession) => void;
+  logout: () => void;
+  setTrainedSkills: (skills: Record<number, number>) => void;
+
   // Plan Manager Actions
   createPlan: (name: string) => void;
   loadPlan: (planId: string) => void;
@@ -40,6 +57,8 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 export const useSkillStore = create<SkillStore>()(
   persist(
     (set, get) => ({
+      user: null,
+      trainedSkills: {},
       queue: [],
       savedPlans: [],
       allSkills: [], 
@@ -52,10 +71,18 @@ export const useSkillStore = create<SkillStore>()(
       },
       activePlanId: null,
       
+      login: (session) => set({ user: session }),
+      logout: () => set({ user: null, trainedSkills: {} }),
+      setTrainedSkills: (trainedSkills) => set({ trainedSkills }),
+
       setAllSkills: (skills) => set({ allSkills: skills }),
 
       addToQueue: (skill, level) =>
         set((state) => {
+          // Check if already trained to this level or higher
+          // If so, we might want to warn or skip, but per requirements: "indicate it is Already Trained"
+          // Logic for queueing is to add it, but display logic handles the visual.
+          
           const newQueue = [
             ...state.queue,
             {
@@ -142,14 +169,10 @@ export const useSkillStore = create<SkillStore>()(
 
       deletePlan: (planId) => set((state) => {
         const remaining = state.savedPlans.filter(p => p.id !== planId);
-        // If we deleted the active plan, unmount it
         const newActiveId = state.activePlanId === planId ? null : state.activePlanId;
         return {
           savedPlans: remaining,
           activePlanId: newActiveId,
-          // If we unmounted, should we clear queue? 
-          // Usually safer to keep it as "Scratchpad" content or clear it. 
-          // Let's keep it to avoid data loss, user is now in "Scratchpad" mode with that data.
         };
       }),
 
@@ -165,7 +188,9 @@ export const useSkillStore = create<SkillStore>()(
         queue: state.queue, 
         attributes: state.attributes,
         savedPlans: state.savedPlans,
-        activePlanId: state.activePlanId
+        activePlanId: state.activePlanId,
+        user: state.user,
+        trainedSkills: state.trainedSkills
       }),
     }
   )

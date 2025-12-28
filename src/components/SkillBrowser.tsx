@@ -7,7 +7,7 @@ import { SkillLevelSquares } from './ui/SkillLevelSquares';
 
 export function SkillBrowser() {
   const [query, setQuery] = useState('');
-  const { allSkills, addToQueue } = useSkillStore();
+  const { allSkills, addToQueue, trainedSkills } = useSkillStore();
   
   // Pagination / Limit for performance
   const LIMIT = 50;
@@ -75,6 +75,7 @@ export function SkillBrowser() {
               
               <SkillLevelSquares 
                 interactive 
+                trainedLevel={trainedSkills[skill.id] || 0}
                 onClick={(lvl) => handleAdd(skill, lvl)}
                 className="opacity-50 group-hover:opacity-100 transition-opacity"
               />
