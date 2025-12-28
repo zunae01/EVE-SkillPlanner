@@ -29,9 +29,6 @@ export function FitImportModal({ isOpen, onClose }: FitImportModalProps) {
       const enriched = missing.map(req => {
         const skillDef = allSkills.find(s => s.id === req.skillId);
         if (!skillDef) return null;
-
-        // Use _ prefix for unused variable
-        const _spTotal = 250 * skillDef.rank * Math.pow(32, (req.level - 1) / 2); 
         
         return {
           skill: skillDef,
