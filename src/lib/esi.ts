@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Skill } from '../types';
 import staticSkills from '../data/staticSkills.json';
+import { CharacterAttributes } from '../types';
 
 const ESI_BASE = 'https://esi.evetech.net/latest';
 const CACHE_KEY = 'eve_skills_cache_v1';
@@ -50,6 +51,22 @@ export const ESIService = {
     });
     
     return trainedMap;
+  },
+
+  async fetchCharacterAttributes(characterId: number, accessToken: string): Promise<CharacterAttributes> {
+    const res = await axios.get(
+      `${ESI_BASE}/characters/${characterId}/attributes/`,
+      { headers: { Authorization: `Bearer ${accessToken}` } }
+    );
+    
+    // The API returns fields like "intelligence", "memory" etc directly.
+    return {
+      intelligence: res.data.intelligence,
+      memory: res.data.memory,
+      charisma: res.data.charisma,
+      perception: res.data.perception,
+      willpower: res.data.willpower
+    };
   },
 
   async refreshDatabase(onProgress?: (count: number, total: number) => void): Promise<Skill[]> {

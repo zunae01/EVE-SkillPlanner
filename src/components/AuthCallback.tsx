@@ -5,7 +5,7 @@ import { useSkillStore } from '../store/useSkillStore';
 import { Loader2 } from 'lucide-react';
 
 export function AuthCallback() {
-  const { login, setTrainedSkills } = useSkillStore();
+  const { login, setTrainedSkills, setAttributes } = useSkillStore();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -21,8 +21,11 @@ export function AuthCallback() {
       try {
         const { tokens, character } = await AuthService.handleCallback(code);
         
-        // Fetch Skills immediately
-        const skills = await ESIService.fetchCharacterSkills(character.CharacterID, tokens.access_token);
+        // Fetch Skills and Attributes immediately
+        const [skills, attributes] = await Promise.all([
+          ESIService.fetchCharacterSkills(character.CharacterID, tokens.access_token),
+          ESIService.fetchCharacterAttributes(character.CharacterID, tokens.access_token)
+        ]);
         
         login({
           characterId: character.CharacterID,
@@ -33,6 +36,7 @@ export function AuthCallback() {
         });
         
         setTrainedSkills(skills);
+        setAttributes(attributes);
         
         // Redirect home
         window.location.href = '/';
@@ -43,7 +47,7 @@ export function AuthCallback() {
     };
 
     processLogin();
-  }, [login, setTrainedSkills]);
+  }, [login, setTrainedSkills, setAttributes]);
 
   if (error) {
     return (
