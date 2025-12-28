@@ -145,53 +145,87 @@ export const useSkillStore = create<SkillStore>()(
            return { queue: [], savedPlans: newSavedPlans };
         }),
 
-      createPlan: (name) => set((state) => {
-        const newId = generateId();
-        const newPlan: SavedPlan = {
-          id: newId,
-          name,
-          created_at: Date.now(),
-          queue: state.queue, // Snapshot current queue into new plan
-        };
-        
-        return {
-          savedPlans: [...state.savedPlans, newPlan],
-          activePlanId: newId // Mount immediately
-        };
-      }),
-
-      loadPlan: (planId) => {
-        const plan = get().savedPlans.find(p => p.id === planId);
-        if (plan) {
-          set({ queue: plan.queue, activePlanId: planId });
-        }
-      },
-
-      deletePlan: (planId) => set((state) => {
-        const remaining = state.savedPlans.filter(p => p.id !== planId);
-        const newActiveId = state.activePlanId === planId ? null : state.activePlanId;
-        return {
-          savedPlans: remaining,
-          activePlanId: newActiveId,
-        };
-      }),
-
-      importPlans: (plans) => set((state) => ({
-        savedPlans: [...state.savedPlans, ...plans]
-      })),
-
-      exitPlan: () => set({ activePlanId: null }),
-    }),
-    {
-      name: 'eve-skill-planner-storage',
-      partialize: (state) => ({ 
-        queue: state.queue, 
-        attributes: state.attributes,
-        savedPlans: state.savedPlans,
-        activePlanId: state.activePlanId,
-        user: state.user,
-        trainedSkills: state.trainedSkills
-      }),
-    }
-  )
-);
+            createPlan: (name) => set((state) => {
+              const newId = generateId();
+              const newPlan: SavedPlan = {
+                id: newId,
+                name,
+                created_at: Date.now(),
+                queue: [], // Start fresh and empty
+              };
+              
+              return {
+                savedPlans: [...state.savedPlans, newPlan],
+                activePlanId: newId,
+                queue: [] // Clear active workspace
+              };
+            }),
+      
+            loadPlan: (planId) => {
+              const plan = get().savedPlans.find(p => p.id === planId);
+              if (plan) {
+                set({ queue: plan.queue, activePlanId: planId });
+              }
+            },
+      
+            deletePlan: (planId) => set((state) => {
+              const remaining = state.savedPlans.filter(p => p.id !== planId);
+              
+              // If we deleted the active plan, fallback to another or create default
+              let nextActiveId = state.activePlanId;
+              let nextQueue = state.queue;
+      
+              if (state.activePlanId === planId) {
+                  if (remaining.length > 0) {
+                      // Switch to first available
+                      nextActiveId = remaining[0].id;
+                      nextQueue = remaining[0].queue;
+                  } else {
+                      // Re-create default if all deleted
+                      const defId = generateId();
+                      const defPlan = { id: defId, name: 'Default Plan', created_at: Date.now(), queue: [] };
+                      remaining.push(defPlan);
+                      nextActiveId = defId;
+                      nextQueue = [];
+                  }
+              }
+      
+              return {
+                savedPlans: remaining,
+                activePlanId: nextActiveId,
+                queue: nextQueue
+              };
+            }),
+      
+            importPlans: (plans) => set((state) => ({
+              savedPlans: [...state.savedPlans, ...plans]
+            })),
+      
+            exitPlan: () => set({ activePlanId: null }), // Deprecated but kept for type safety if needed temporarily
+          }),
+          {
+            name: 'eve-skill-planner-storage',
+            partialize: (state) => ({
+              queue: state.queue,
+              attributes: state.attributes,
+              savedPlans: state.savedPlans,
+              activePlanId: state.activePlanId,
+              user: state.user,
+              trainedSkills: state.trainedSkills
+            }),
+            onRehydrateStorage: () => (state) => {
+              // Ensure at least one plan exists on load
+              if (state && state.savedPlans.length === 0) {
+                  const defId = generateId();
+                  state.savedPlans = [{ id: defId, name: 'Default Plan', created_at: Date.now(), queue: [] }];
+                  state.activePlanId = defId;
+                  state.queue = [];
+              } else if (state && !state.activePlanId && state.savedPlans.length > 0) {
+                  // Recover from lost active ID
+                  state.activePlanId = state.savedPlans[0].id;
+                  state.queue = state.savedPlans[0].queue;
+              }
+            }
+          }
+        )
+      );

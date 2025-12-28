@@ -6,7 +6,7 @@ import { cn } from '../lib/utils';
 import { FitImportModal } from './FitImportModal';
 
 export function PlanManager() {
-  const { savedPlans, createPlan, loadPlan, deletePlan, importPlans, setAllSkills, activePlanId, exitPlan } = useSkillStore();
+  const { savedPlans, createPlan, loadPlan, deletePlan, importPlans, setAllSkills, activePlanId } = useSkillStore();
   const [isCreating, setIsCreating] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
@@ -74,12 +74,7 @@ export function PlanManager() {
   };
 
   const handlePlanChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const val = e.target.value;
-    if (val === '__scratchpad__') {
-      exitPlan();
-    } else {
-      loadPlan(val);
-    }
+    loadPlan(e.target.value);
   };
 
   return (
@@ -112,27 +107,25 @@ export function PlanManager() {
               </button>
             </div>
           ) : (
-            <>
-              <div className="relative flex-1 max-w-xs">
-                  <FolderOpen className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-                  <select
-                      value={activePlanId || '__scratchpad__'}
-                      onChange={handlePlanChange}
-                      className="w-full bg-black/20 border border-white/10 rounded pl-9 pr-8 py-1.5 text-sm focus:ring-1 focus:ring-primary/50 outline-none appearance-none cursor-pointer hover:bg-black/30 transition-colors h-8 text-foreground"
-                  >
-                      <option value="__scratchpad__">Scratchpad (Unsaved)</option>
-                      <optgroup label="Saved Plans">
-                          {savedPlans.map(p => (
-                              <option key={p.id} value={p.id}>{p.name}</option>
-                          ))}
-                      </optgroup>
-                  </select>
-                  <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/50 text-[10px]">
-                      ▼
-                  </div>
-              </div>
-              
-              <button
+                      <>
+                        <div className="relative flex-1 max-w-xs">
+                            <FolderOpen className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+                            <select
+                                value={activePlanId || ''}
+                                onChange={handlePlanChange}
+                                className="w-full bg-black/20 border border-white/10 rounded pl-9 pr-8 py-1.5 text-sm focus:ring-1 focus:ring-primary/50 outline-none appearance-none cursor-pointer hover:bg-black/30 transition-colors h-8 text-foreground"
+                            >
+                                {savedPlans.map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
+                                ))}
+                            </select>
+                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-muted-foreground/50 text-[10px]">
+                                ▼
+                            </div>
+                        </div>
+                        
+                        <button
+            
                 onClick={() => setIsCreating(true)}
                 className="p-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded border border-primary/20 transition-colors h-8 w-8 flex items-center justify-center"
                 title="Create New Plan"
