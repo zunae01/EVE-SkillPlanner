@@ -20,6 +20,25 @@ const RANK_ATTR_ID = 275;
 const PRIMARY_ATTR_ID = 180;
 const SECONDARY_ATTR_ID = 181;
 
+const buildSkillFromType = (data: any): Skill | null => {
+  const dogma = data.dogma_attributes || [];
+  const rankAttr = dogma.find((d: any) => d.attribute_id === RANK_ATTR_ID);
+  const primAttr = dogma.find((d: any) => d.attribute_id === PRIMARY_ATTR_ID);
+  const secAttr = dogma.find((d: any) => d.attribute_id === SECONDARY_ATTR_ID);
+
+  if (!rankAttr || !primAttr || !secAttr) return null;
+
+  return {
+    id: data.type_id,
+    name: data.name,
+    group_id: data.group_id ?? 0,
+    description: data.description ?? '',
+    rank: rankAttr.value,
+    primary_attribute: ATTR_MAP[primAttr.value as number] || 'intelligence',
+    secondary_attribute: ATTR_MAP[secAttr.value as number] || 'memory',
+  } as Skill;
+};
+
 export const ESIService = {
   async fetchAllSkills(): Promise<Skill[]> {
     // 1. Check LocalStorage Cache
@@ -36,6 +55,25 @@ export const ESIService = {
     // If the user wants to update, they must call refreshDatabase().
     // We cast the imported JSON to Skill[] because we know the structure matches
     return staticSkills as unknown as Skill[];
+  },
+
+  async fetchSkillsByIds(skillIds: number[]): Promise<Skill[]> {
+    const uniqueIds = [...new Set(skillIds)].filter(Boolean);
+    if (uniqueIds.length === 0) return [];
+
+    const results = await Promise.all(
+      uniqueIds.map(async (id) => {
+        try {
+          const res = await axios.get(`${ESI_BASE}/universe/types/${id}/`);
+          return buildSkillFromType(res.data);
+        } catch (e) {
+          console.warn(`Failed to fetch skill ${id}`, e);
+          return null;
+        }
+      })
+    );
+
+    return results.filter((s): s is Skill => s !== null);
   },
 
   async fetchCharacterSkills(characterId: number, accessToken: string): Promise<Record<number, number>> {
@@ -102,27 +140,13 @@ export const ESIService = {
         const results = await Promise.all(
           batch.map(async ({ id, groupId }) => {
             try {
-              const res = await axios.get(`${ESI_BASE}/universe/types/${id}/`);
-              const data = res.data;
-              if (!data.published) return null;
+          const res = await axios.get(`${ESI_BASE}/universe/types/${id}/`);
+          const data = res.data;
+          if (!data.published) return null;
 
-              // Extract attributes
-              const dogma = data.dogma_attributes || [];
-              const rankAttr = dogma.find((d: any) => d.attribute_id === RANK_ATTR_ID);
-              const primAttr = dogma.find((d: any) => d.attribute_id === PRIMARY_ATTR_ID);
-              const secAttr = dogma.find((d: any) => d.attribute_id === SECONDARY_ATTR_ID);
-
-              if (!rankAttr || !primAttr || !secAttr) return null; // Not a trainable skill?
-
-              return {
-                id: data.type_id,
-                name: data.name,
-                group_id: groupId,
-                description: data.description,
-                rank: rankAttr.value,
-                primary_attribute: ATTR_MAP[primAttr.value as number] || 'intelligence',
-                secondary_attribute: ATTR_MAP[secAttr.value as number] || 'memory',
-              } as Skill;
+              const skill = buildSkillFromType(data);
+              if (!skill) return null;
+              return { ...skill, group_id: groupId };
             } catch (e) {
               console.warn(`Failed to fetch skill ${id}`, e);
               return null;
@@ -151,4 +175,3 @@ export const ESIService = {
     }
   }
 };
-

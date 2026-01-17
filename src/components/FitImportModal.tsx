@@ -6,6 +6,7 @@ import { SkillLevelSquares } from './ui/SkillLevelSquares';
 import { Skill, CharacterAttributes } from '../types';
 import { cn } from '../lib/utils';
 import { calculateTrainingTime, formatTime } from '../lib/eveUtils';
+import { ESIService } from '../lib/esi';
 
 interface FitImportModalProps {
   isOpen: boolean;
@@ -13,7 +14,7 @@ interface FitImportModalProps {
 }
 
 export function FitImportModal({ isOpen, onClose }: FitImportModalProps) {
-  const { trainedSkills, attributes, addToQueue, createPlan, allSkills } = useSkillStore();
+  const { trainedSkills, attributes, addToQueue, createPlan, allSkills, setAllSkills } = useSkillStore();
   const [step, setStep] = useState<'input' | 'analyzing' | 'results'>('input');
   const [eftText, setEftText] = useState('');
   const [missingSkills, setMissingSkills] = useState<{ skill: Skill; level: number; time: number; type: string }[]>([]);
@@ -25,9 +26,24 @@ export function FitImportModal({ isOpen, onClose }: FitImportModalProps) {
     setStep('analyzing');
     try {
       const { missing } = await EFTParser.analyzeFit(eftText, trainedSkills);
+
+      const missingSkillIds = [...new Set(missing.map(req => req.skillId))]
+        .filter(id => !allSkills.some(s => s.id === id));
+      let skillsForLookup = allSkills;
+      if (missingSkillIds.length > 0) {
+        const fetched = await ESIService.fetchSkillsByIds(missingSkillIds);
+        if (fetched.length > 0) {
+          const merged = [...allSkills];
+          fetched.forEach(skill => {
+            if (!merged.some(s => s.id === skill.id)) merged.push(skill);
+          });
+          setAllSkills(merged);
+          skillsForLookup = merged;
+        }
+      }
       
       const enriched = missing.map(req => {
-        const skillDef = allSkills.find(s => s.id === req.skillId);
+        const skillDef = skillsForLookup.find(s => s.id === req.skillId);
         if (!skillDef) return null;
         
         return {
